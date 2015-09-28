@@ -127,6 +127,11 @@ while fixation_clock.getTime() <= 30.0:
 # s.setblocking(0)
 # conn.setblocking(0)
 
+
+##################### start task #####################
+
+
+# read csv file
 import csv
 csvfile = open('mindrun.csv', 'rb')
 content = csv.reader(csvfile, delimiter=',')
@@ -135,11 +140,11 @@ content.next()
 for row in content:
      blocks.append((row[0], int(row[1])))
 
+
+#set up screen
 win = visual.Window([800,600])
 mov = visual.MovieStim(win, 'mindrun.mp4', size=[320,240],
                        flipVert=False, flipHoriz=False, loop=True)
-
-
 
 text = visual.TextStim(win=win, ori=0, name='text',
     text=u"'User'\r\n",    font=u'Arial',
@@ -150,7 +155,7 @@ text = visual.TextStim(win=win, ori=0, name='text',
 text.setAutoDraw(True)
 
 
-
+#set up clock and score
 clock = core.Clock()
 global_clock = core.Clock()
 block_index = 0
@@ -166,62 +171,77 @@ score_text = visual.TextStim(win=win, ori=0, name='text',
 
 score_text.setAutoDraw(True)
 
+
+#start receiving values from lumina
 while True:
-    data=[]
-    block = blocks[block_index]
+    lumina_dev.poll_for_response()
+    while lumina_dev.response_queue_size() > 0:
+        response = lumina_dev.get_next_response()
 
-    try:
-        data = conn.recv(BUFFER_SIZE)
-        data = float(data.split('\n')[0])
-        log_file.write(str(data)+'\n')
-    except socket.error as ex:
-        data = float(0.0)
-    
-
-    if block[0] == 'user':
-        text.text = 'User'
-        if data < float(0):
-            print 'pause', data, clock.getTime()
-            mov.pause()
-            #global_clock.pause()
-            running = False
-
-        elif data > float(0):
-            print 'play', data, clock.getTime()
-            mov.play()
-            running = True
-
-    else:
-        text.text = 'Free run'
+        #what to do with response?????
 
 
-    #calc score
-    if running:
-        bonus = global_clock.getTime() / 100.0
-        score +=0.1 + bonus
+        # if response["pressed"]:
+        #     print "Lumina received: %s, %d"%(response["key"],response["key"])
+        #     text_instruct.setAutoDraw(False)
+        #     show_instructions = False
 
-    if clock.getTime() >= block[1]:
-        block_index+=1
-        clock.reset()
 
-        if block_index < len(blocks) and blocks[block_index][0] == 'free':
-            mov.play()
-            running = True
-        print 'change user'
+        data=[]
+        block = blocks[block_index]
 
-    if block_index == len(blocks):
-        break
+        try:
+            data = conn.recv(BUFFER_SIZE)
+            data = float(data.split('\n')[0])
+            log_file.write(str(data)+'\n')
+        except socket.error as ex:
+            data = float(0.0)
+        
 
-    score_text.text = str(int(score))
-    mov.draw()
-    win.flip()
+        if block[0] == 'user':
+            text.text = 'User'
+            if data < float(0):
+                print 'pause', data, clock.getTime()
+                mov.pause()
+                #global_clock.pause()
+                running = False
 
-    if event.getKeys(keyList=['escape','q']):
-        log_file.close()
-        conn.close()
-        s.close()
-        win.close()
-        core.quit()
+            elif data > float(0):
+                print 'play', data, clock.getTime()
+                mov.play()
+                running = True
+
+        else:
+            text.text = 'Free run'
+
+
+        #calc score
+        if running:
+            bonus = global_clock.getTime() / 100.0
+            score +=0.1 + bonus
+
+        if clock.getTime() >= block[1]:
+            block_index+=1
+            clock.reset()
+
+            if block_index < len(blocks) and blocks[block_index][0] == 'free':
+                mov.play()
+                running = True
+            print 'change user'
+
+        if block_index == len(blocks):
+            break
+
+        score_text.text = str(int(score))
+        mov.draw()
+        win.flip()
+
+        if event.getKeys(keyList=['escape','q']):
+            log_file.close()
+            conn.close()
+            s.close()
+            win.close()
+            core.quit()
 
 
 log_file.close()
