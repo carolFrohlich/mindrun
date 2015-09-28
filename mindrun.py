@@ -4,6 +4,33 @@ import math
 #python tcp_send_1d.py -infile=test.1D -tcphost=127.0.0.1 -tcpport=8000 -delay=0.5
 
 
+LUMINA = 1
+LUMINA_TRIGGER = 4
+
+## initialize communication with the lumina
+
+if LUMINA == 1:
+    import pyxid # to interact with the Lumina box
+    import sys
+
+    ## initialize communication with the lumina
+    devices=pyxid.get_xid_devices()
+
+    if devices:
+        lumina_dev=devices[0]
+    else:
+        print "Could not find Lumina device"
+        sys.exit(1)
+
+    print lumina_dev
+    if lumina_dev.is_response_device():
+        lumina_dev.reset_base_timer()
+        lumina_dev.reset_rt_timer()
+    else:
+        print "Error: Lumina device is not a response device??"
+        sys.exit(1)
+
+
 #--- TCPIP RECV - edited below to include IP address and TCP port in dialogue
 # Store info about the experiment session
 expName = u'net_text'  # from the Builder filename that created this script
@@ -17,26 +44,88 @@ expInfo['expName'] = expName
 
 log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 
+
+############### show instructions while waiting for 5 ###############
+win = visual.Window([800,600])
+instructionsClock = core.Clock()
+text_instruct = visual.TextStim(win=win, ori=0, name='text_instruct',
+    text="Mussum ipsum cacilds, vidis litro abertis.\n\n'Consetis adipiscings elitis.\n\n'Pra lá , depois divoltis porris, paradis. \n\nPaisis, filhis, espiritis santis.",    font='Arial',
+    pos=[0, 0], height=0.1, wrapWidth=None,
+    color='white', colorSpace='rgb', opacity=1,
+    depth=0.0)
+
+text_instruct.setAutoDraw(True)
+show_instructions = True
+lumina_dev.clear_response_queue()
+
+while show_instructions:
+    lumina_dev.poll_for_response()
+    while lumina_dev.response_queue_size() > 0:
+        response = lumina_dev.get_next_response()
+        if response["pressed"]:
+            print "Lumina received: %s, %d"%(response["key"],response["key"])
+            text_instruct.setAutoDraw(False)
+            show_instructions = False
+        
+
+
+
+
+
+##################### instructions finish, 30s fixation #####################
+fixation_clock = core.Clock()
+
+#create window
+win = visual.Window(size=(1024, 768),
+                    #fullscr=FULL_SCREEN,
+                    screen=0,
+                    allowGUI=False,
+                    allowStencil=False,
+                    monitor='testMonitor',
+                    color='black',
+                    colorSpace='rgb')
+
+
+fix_stim = visual.Circle(win=win,
+    radius=[0.01875,0.025],
+    edges=32,
+    ori=0,
+    name='fix_stim',
+    pos=[0, 0],
+    lineColor='white',
+    fillColor='white',
+    lineColorSpace='rgb',
+    opacity=1,
+    depth=0.0)
+
+
+fix_stim.setAutoDraw(True)
+
+while fixation_clock.getTime() <= 30.0:
+    fix_stim.setAutoDraw(False)
+
+
+
 #--- start TCPIP RECV 
 # initialize TCP socket to receive data
-import socket
-import select
-TCP_IP = expInfo['IP Address'].strip() # use localhost
-TCP_PORT = int(expInfo['TCP Port'])   # TCP port number
-BUFFER_SIZE = 1024
+# import socket
+# import select
+# TCP_IP = expInfo['IP Address'].strip() # use localhost
+# TCP_PORT = int(expInfo['TCP Port'])   # TCP port number
+# BUFFER_SIZE = 1024
 
 
-# system calls to initialize the socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# # system calls to initialize the socket
+# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-s.bind((TCP_IP, TCP_PORT))
-s.listen(1)
+# s.bind((TCP_IP, TCP_PORT))
+# s.listen(1)
 
-print('Waiting for connection on %s:%s'%(TCP_IP,TCP_PORT))
+# print('Waiting for connection on %s:%s'%(TCP_IP,TCP_PORT))
 
-conn, addr = s.accept()
-s.setblocking(0)
-conn.setblocking(0)
+# conn, addr = s.accept()
+# s.setblocking(0)
+# conn.setblocking(0)
 
 import csv
 csvfile = open('mindrun.csv', 'rb')
