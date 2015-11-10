@@ -56,14 +56,18 @@ log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 
 ############### show instructions while waiting for 5 ###############
 win = visual.Window([800,600])
+
+blink = visual.PatchStim(win=win, size=([800,600]),color=(1.0, 1.0, 1.0), opacity=0.8)
+
 instructionsClock = core.Clock()
 text_instruct = visual.TextStim(win=win, ori=0, name='text_instruct',
-    text="Mussum ipsum cacilds, vidis litro abertis.\n\n'Consetis adipiscings elitis.\n\n'Pra la , depois divoltis porris, paradis. \n\nPaisis, filhis, espiritis santis.",    font='Arial',
-    pos=[0, 0], height=0.1, wrapWidth=None,
+    text="The goal of this task is to make your character run using your own brain activity.\n\nOn the bottom center of the screen there will be instructions to let you know who is playing the game.\n\nWhen the instructions say 'You Run', focus your attention to make your character run. \n\nWhen the instructions say 'Free Run' you may rest quietly with your eyes open and watch the game.",    font='Arial',
+    pos=[0, 0], height=0.085, wrapWidth=None,
     color='white', colorSpace='rgb', opacity=1,
     depth=0.0)
 
 text_instruct.setAutoDraw(True)
+blink.setAutoDraw(True)
 show_instructions = True
 win.flip()
 
@@ -83,6 +87,11 @@ BUFFER_SIZE = 1024
 
 
 while show_instructions:
+
+    if event.getKeys(keyList=['escape','q']):
+        quit()
+
+
     if LUMINA == 1:
     	print 'waiting for lumina'
         lumina_dev.poll_for_response()
@@ -96,6 +105,7 @@ while show_instructions:
         time.sleep(10)
         text_instruct.setAutoDraw(False)
         show_instructions = False
+        blink.setAutoDraw(False)
 
     print 'lumina ok'
  
@@ -131,6 +141,9 @@ win.flip()
 
 while fixation_clock.getTime() <= 10.0:
     fix_stim.setAutoDraw(True)
+
+    if event.getKeys(keyList=['escape','q']):
+        quit()
 
 fix_stim.setAutoDraw(False)
 win.flip()
