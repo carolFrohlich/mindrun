@@ -5,6 +5,14 @@ import time
 #python tcp_send_1d.py -infile=test.1D -tcphost=127.0.0.1 -tcpport=8000 -delay=0.5
 
 
+def quit():
+    log_file.close()
+    conn.close()
+    s.close()
+    win.close()
+    core.quit()
+
+
 LUMINA = 0
 LUMINA_TRIGGER = 4
 
@@ -57,6 +65,8 @@ text_instruct = visual.TextStim(win=win, ori=0, name='text_instruct',
 
 text_instruct.setAutoDraw(True)
 show_instructions = True
+win.flip()
+
 
 if LUMINA == 1:
 	lumina_dev.clear_response_queue()
@@ -88,12 +98,12 @@ while show_instructions:
         show_instructions = False
 
     print 'lumina ok'
-    #TODO: I have no idea where socket code should 
-    #system calls to initialize the socket
+ 
 
+#system calls to initialize the socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-TCP_IP = ''
+#TCP_IP = ''
 s.bind((TCP_IP, TCP_PORT))
 s.listen(1)
 
@@ -108,38 +118,22 @@ print 'connection ok'
 ##################### instructions finish, we are connected, 30s fixation #####################
 fixation_clock = core.Clock()
 
-#create window
-win = visual.Window(size=(1024, 768),
-                    #fullscr=FULL_SCREEN,
-                    screen=0,
-                    allowGUI=False,
-                    allowStencil=False,
-                    monitor='testMonitor',
-                    color='black',
-                    colorSpace='rgb')
 
 
-fix_stim = visual.Circle(win=win,
-    radius=[0.01875,0.025],
-    edges=32,
-    ori=0,
-    name='fix_stim',
-    pos=[0, 0],
-    lineColor='white',
-    fillColor='white',
-    lineColorSpace='rgb',
-    opacity=1,
+fix_stim = visual.TextStim(win=win, ori=0, name='fixation',
+    text="+",    font='Arial',
+    pos=[0, 0], height=0.8, wrapWidth=None,
+    color='white', colorSpace='rgb', opacity=1,
     depth=0.0)
 
-
 fix_stim.setAutoDraw(True)
+win.flip()
 
-while fixation_clock.getTime() <= 3.0:
+while fixation_clock.getTime() <= 10.0:
     fix_stim.setAutoDraw(True)
 
 fix_stim.setAutoDraw(False)
-
-
+win.flip()
 
 ##################### start task #####################
 
@@ -155,7 +149,6 @@ for row in content:
 
 
 #set up screen
-win = visual.Window([800,600])
 mov = visual.MovieStim(win, 'mindrun.mp4', size=[320,240],
                        flipVert=False, flipHoriz=False, loop=True)
 
@@ -191,23 +184,32 @@ while True:
     block = blocks[block_index]
 
     try:
-        data = str(conn.recv(BUFFER_SIZE))
-        #TODO: ver o q a ressonancia vai mandar
+        #######################################
+        #use this code when working with real data
 
-        tcp_data=data.replace('\000', ''); # remove null byte
-        #print "%s (%s) (%s)" %('tcp_data', tcp_data, tcp_buffer)
+        # data = str(conn.recv(BUFFER_SIZE))
 
-        if tcp_data != '\000' and tcp_data != "" and \
-            "nan" not in tcp_data.lower():
+        # tcp_data=data.replace('\000', ''); # remove null byte
+        # #print "%s (%s) (%s)" %('tcp_data', tcp_data, tcp_buffer)
 
-            vals=tcp_data.split(",")
-            if len(vals) > 1:
-                data=float(vals[1])
-            else:
-                data=float(tcp_data)
+        # if tcp_data != '\000' and tcp_data != "" and \
+        #     "nan" not in tcp_data.lower():
 
-        log_file.write(str(data)+'\n')
-        print "Received %s, %f\n"%(tcp_data,data)  
+        #     vals=tcp_data.split(",")
+        #     if len(vals) > 1:
+        #         data=float(vals[1])
+        #     else:
+        #         data=float(tcp_data)
+        #######################################
+
+
+        #######################################
+        #use this when testing with tcp_send_1d
+        data = conn.recv(BUFFER_SIZE)
+        data = float(data.split('\n')[0])
+        #######################################
+
+        log_file.write(str(data)+'\n') 
 
     except socket.error as ex:
         data = float(0.0)
@@ -230,11 +232,12 @@ while True:
         text.text = 'Free run'
 
 
-    #calc score
+    #calculate score score
     if running:
         bonus = global_clock.getTime() / 100.0
         score +=0.1 + bonus
 
+    #change block (user or free)
     if clock.getTime() >= block[1]:
         block_index+=1
         clock.reset()
@@ -244,22 +247,59 @@ while True:
             running = True
         print 'change user'
 
+    #finish movie if we ran all blocks    
     if block_index == len(blocks):
         break
 
+    #update screen
     score_text.text = str(int(score))
     mov.draw()
     win.flip()
 
     if event.getKeys(keyList=['escape','q']):
-        log_file.close()
-        conn.close()
-        s.close()
-        win.close()
-        core.quit()
+        quit()
 
 
-log_file.close()
-conn.close()
-s.close()
-core.quit()
+#finished movie, clean screen
+mov.setAutoDraw(False)
+text.setAutoDraw(False)
+score_text.setAutoDraw(False)
+
+##################### experiment finished, go to thanks screen #####################
+
+#creating text stim
+your_score = visual.TextStim(win=win, ori=0, name='your_score',
+    text=u"Your score is",    font=u'Arial',
+    pos=[0, 0.5], height=0.2, wrapWidth=None,
+    color=u'orange', colorSpace=u'rgb', opacity=1,
+    alignHoriz='center',depth=-1.0)
+your_score.setAutoDraw(True)
+
+score_text = visual.TextStim(win=win, ori=0, name='score',
+    text=str(int(score)),    font=u'Arial',
+    pos=[0, 0], height=0.8, wrapWidth=None,
+    color=u'orange', colorSpace=u'rgb', opacity=1,
+    alignHoriz='center',depth=-1.0)
+score_text.setAutoDraw(True)
+
+thanks = visual.TextStim(win=win, ori=0, name='thanks',
+    text=u"Thank you",    font=u'Arial',
+    pos=[0, -0.5], height=0.2, wrapWidth=None,
+    color=u'orange', colorSpace=u'rgb', opacity=1,
+    alignHoriz='center',depth=-1.0)
+thanks.setAutoDraw(True)
+
+win.flip()
+
+thanks_clock = core.Clock()
+
+#start thanks loop
+while thanks_clock.getTime() <= 10.0:
+    if event.getKeys(keyList=['escape','q']):
+        quit()
+
+    fix_stim.setAutoDraw(True)
+
+
+#wrap up
+quit()
