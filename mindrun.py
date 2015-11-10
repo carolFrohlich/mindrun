@@ -5,12 +5,12 @@ import time
 #python tcp_send_1d.py -infile=test.1D -tcphost=127.0.0.1 -tcpport=8000 -delay=0.5
 
 
-LUMINA = 1
+LUMINA = 0
 LUMINA_TRIGGER = 4
 
 ## initialize communication with the lumina
 
-if LUMINA:
+if LUMINA == 1:
     import pyxid # to interact with the Lumina box
     import sys
 
@@ -50,14 +50,16 @@ log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 win = visual.Window([800,600])
 instructionsClock = core.Clock()
 text_instruct = visual.TextStim(win=win, ori=0, name='text_instruct',
-    text="Mussum ipsum cacilds, vidis litro abertis.\n\n'Consetis adipiscings elitis.\n\n'Pra lá , depois divoltis porris, paradis. \n\nPaisis, filhis, espiritis santis.",    font='Arial',
+    text="Mussum ipsum cacilds, vidis litro abertis.\n\n'Consetis adipiscings elitis.\n\n'Pra la , depois divoltis porris, paradis. \n\nPaisis, filhis, espiritis santis.",    font='Arial',
     pos=[0, 0], height=0.1, wrapWidth=None,
     color='white', colorSpace='rgb', opacity=1,
     depth=0.0)
 
 text_instruct.setAutoDraw(True)
 show_instructions = True
-lumina_dev.clear_response_queue()
+
+if LUMINA == 1:
+	lumina_dev.clear_response_queue()
 
 
 #--- start TCPIP RECV 
@@ -71,7 +73,8 @@ BUFFER_SIZE = 1024
 
 
 while show_instructions:
-    if LUMINA:
+    if LUMINA == 1:
+    	print 'waiting for lumina'
         lumina_dev.poll_for_response()
         while lumina_dev.response_queue_size() > 0:
             response = lumina_dev.get_next_response()
@@ -80,21 +83,26 @@ while show_instructions:
                 text_instruct.setAutoDraw(False)
                 show_instructions = False
     else:
-        time.sleep(5)
+        time.sleep(10)
+        text_instruct.setAutoDraw(False)
+        show_instructions = False
 
+    print 'lumina ok'
     #TODO: I have no idea where socket code should 
     #system calls to initialize the socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    s.bind((TCP_IP, TCP_PORT))
-    s.listen(1)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    print('Waiting for connection on %s:%s'%(TCP_IP,TCP_PORT))
+TCP_IP = ''
+s.bind((TCP_IP, TCP_PORT))
+s.listen(1)
 
-    conn, addr = s.accept()
-    s.setblocking(0)
-    conn.setblocking(0)
-        
+print('Waiting for connection on %s:%s'%(TCP_IP,TCP_PORT))
+
+conn, addr = s.accept()
+s.setblocking(0)
+conn.setblocking(0)
+print 'connection ok'        
 
 
 ##################### instructions finish, we are connected, 30s fixation #####################
@@ -126,7 +134,7 @@ fix_stim = visual.Circle(win=win,
 
 fix_stim.setAutoDraw(True)
 
-while fixation_clock.getTime() <= 30.0:
+while fixation_clock.getTime() <= 3.0:
     fix_stim.setAutoDraw(True)
 
 fix_stim.setAutoDraw(False)
@@ -183,10 +191,24 @@ while True:
     block = blocks[block_index]
 
     try:
-        data = conn.recv(BUFFER_SIZE)
+        data = str(conn.recv(BUFFER_SIZE))
         #TODO: ver o q a ressonancia vai mandar
-        data = float(data.split('\n')[0])
+
+        tcp_data=data.replace('\000', ''); # remove null byte
+        #print "%s (%s) (%s)" %('tcp_data', tcp_data, tcp_buffer)
+
+        if tcp_data != '\000' and tcp_data != "" and \
+            "nan" not in tcp_data.lower():
+
+            vals=tcp_data.split(",")
+            if len(vals) > 1:
+                data=float(vals[1])
+            else:
+                data=float(tcp_data)
+
         log_file.write(str(data)+'\n')
+        print "Received %s, %f\n"%(tcp_data,data)  
+
     except socket.error as ex:
         data = float(0.0)
         
