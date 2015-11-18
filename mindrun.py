@@ -57,7 +57,7 @@ log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 ############### show instructions while waiting for 5 ###############
 win = visual.Window([800,600])
 
-blink = visual.PatchStim(win=win, size=([800,600]),color=(1.0, 1.0, 1.0), opacity=0.8)
+#blink = visual.PatchStim(win=win, size=([800,600]),color=(1.0, 1.0, 1.0), opacity=0.8)
 
 instructionsClock = core.Clock()
 text_instruct = visual.TextStim(win=win, ori=0, name='text_instruct',
@@ -67,7 +67,7 @@ text_instruct = visual.TextStim(win=win, ori=0, name='text_instruct',
     depth=0.0)
 
 text_instruct.setAutoDraw(True)
-blink.setAutoDraw(True)
+#blink.setAutoDraw(True)
 show_instructions = True
 win.flip()
 
@@ -93,21 +93,22 @@ while show_instructions:
 
 
     if LUMINA == 1:
-    	print 'waiting for lumina'
+    	#print 'waiting for lumina'
         lumina_dev.poll_for_response()
         while lumina_dev.response_queue_size() > 0:
             response = lumina_dev.get_next_response()
             if response["pressed"]:
-                print "Lumina received: %s, %d"%(response["key"],response["key"])
+                #print "Lumina received: %s, %d"%(response["key"],response["key"])
                 text_instruct.setAutoDraw(False)
                 show_instructions = False
     else:
         time.sleep(10)
         text_instruct.setAutoDraw(False)
         show_instructions = False
-        blink.setAutoDraw(False)
+        #blink.setAutoDraw(False)
 
-    print 'lumina ok'
+
+print 'lumina ok'
  
 
 #system calls to initialize the socket
@@ -124,6 +125,14 @@ s.setblocking(0)
 conn.setblocking(0)
 print 'connection ok'        
 
+# read and discard data from the socket
+# data = '1'
+# while len(data) > 0:
+#     try:
+#     	data = conn.recv(1024)
+#     	print "just cleaned %d bytes of data from buffer"%(len(data))
+#     except socket.error as ex:
+#     	data=[]
 
 ##################### instructions finish, we are connected, 30s fixation #####################
 fixation_clock = core.Clock()
@@ -139,14 +148,19 @@ fix_stim = visual.TextStim(win=win, ori=0, name='fixation',
 fix_stim.setAutoDraw(True)
 win.flip()
 
-while fixation_clock.getTime() <= 10.0:
-    fix_stim.setAutoDraw(True)
+# while fixation_clock.getTime() <= 5.0:
+#     fix_stim.setAutoDraw(True)
 
-    if event.getKeys(keyList=['escape','q']):
-        quit()
+#     if event.getKeys(keyList=['escape','q']):
+#         quit()
+#     try:
+#     	data = conn.recv(1024)
+#     	print "just cleaned %d bytes of data from buffer"%(len(data))
+#     except socket.error as ex:
+#     	continue
 
-fix_stim.setAutoDraw(False)
-win.flip()
+# fix_stim.setAutoDraw(False)
+# win.flip()
 
 ##################### start task #####################
 
@@ -190,7 +204,7 @@ score_text = visual.TextStim(win=win, ori=0, name='text',
 
 score_text.setAutoDraw(True)
 
-
+from ast import literal_eval
 #start receiving values from socket
 while True:
     data=[]
@@ -200,26 +214,36 @@ while True:
         #######################################
         #use this code when working with real data
 
-        # data = str(conn.recv(BUFFER_SIZE))
-
-        # tcp_data=data.replace('\000', ''); # remove null byte
-        # #print "%s (%s) (%s)" %('tcp_data', tcp_data, tcp_buffer)
-
-        # if tcp_data != '\000' and tcp_data != "" and \
-        #     "nan" not in tcp_data.lower():
-
-        #     vals=tcp_data.split(",")
-        #     if len(vals) > 1:
-        #         data=float(vals[1])
-        #     else:
-        #         data=float(tcp_data)
         #######################################
+        data = conn.recv(BUFFER_SIZE)
+        print 'raw', len(data)
+        #fyiprint data
+        #tcp_data=data
+        #tcp_data=data.replace('\000', ','); # remove null byte
+        tcp_data=str(data.split('\000')[0])
+        #print "%s (%s) (%s)" %('tcp_data', tcp_data, tcp_buffer)
+        print 'no null'
+        #print tcp_data
+        if tcp_data != '\000' and tcp_data != "" and \
+            "nan" not in tcp_data.lower():
+
+            vals=tcp_data.split(",")
+            print 'split'
+            print vals
+            if len(vals) > 1:
+            	print 'len -----------', len(vals)
+            	print 'array 1'
+            	print vals[1]
+                data=float(vals[1])
+
+            else:
+                data=float(tcp_data)
 
 
         #######################################
         #use this when testing with tcp_send_1d
-        data = conn.recv(BUFFER_SIZE)
-        data = float(data.split('\n')[0])
+        # data = conn.recv(BUFFER_SIZE)
+        # data = float(data.split('\n')[0])
         #######################################
 
         log_file.write(str(data)+'\n') 
@@ -227,8 +251,10 @@ while True:
     except socket.error as ex:
         data = float(0.0)
         
+    if block[0] == 'fixation':
+    	fix_stim.setAutoDraw(True)
 
-    if block[0] == 'user':
+    elif block[0] == 'user':
         text.text = 'User'
         if data < float(0):
             print 'pause', data, clock.getTime()
@@ -265,8 +291,9 @@ while True:
         break
 
     #update screen
-    score_text.text = str(int(score))
-    mov.draw()
+    if block[0] is not 'fixation':
+	    score_text.text = str(int(score))
+	    mov.draw()
     win.flip()
 
     if event.getKeys(keyList=['escape','q']):
@@ -307,7 +334,7 @@ win.flip()
 thanks_clock = core.Clock()
 
 #start thanks loop
-while thanks_clock.getTime() <= 10.0:
+while thanks_clock.getTime() <= 30.0:
     if event.getKeys(keyList=['escape','q']):
         quit()
 
