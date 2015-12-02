@@ -148,22 +148,6 @@ fix_stim = visual.TextStim(win=win, ori=0, name='fixation',
 fix_stim.setAutoDraw(True)
 win.flip()
 
-# while fixation_clock.getTime() <= 5.0:
-#     fix_stim.setAutoDraw(True)
-
-#     if event.getKeys(keyList=['escape','q']):
-#         quit()
-#     try:
-#     	data = conn.recv(1024)
-#     	print "just cleaned %d bytes of data from buffer"%(len(data))
-#     except socket.error as ex:
-#     	continue
-
-# fix_stim.setAutoDraw(False)
-# win.flip()
-
-##################### start task #####################
-
 
 # read csv file
 import csv
@@ -202,12 +186,11 @@ score_text = visual.TextStim(win=win, ori=0, name='text',
     color=u'orange', colorSpace=u'rgb', opacity=1,
     alignHoriz='center',depth=-1.0)
 
-
-
-from ast import literal_eval
+data=[]
+block = None
 #start receiving values from socket
 while True:
-    data=[]
+    
     block = blocks[block_index]
 
     try:
@@ -216,24 +199,12 @@ while True:
 
         #######################################
         data = conn.recv(BUFFER_SIZE)
-        #print 'raw', len(data)
-        #print data
-        #tcp_data=data
-        #tcp_data=data.replace('\000', ','); # remove null byte
         tcp_data=str(data.split('\000')[0])
-        #print "%s (%s) (%s)" %('tcp_data', tcp_data, tcp_buffer)
-        #print 'no null', tcp_data
-        #print tcp_data
         if tcp_data != '\000' and tcp_data != "" and \
             "nan" not in tcp_data.lower():
 
             vals=tcp_data.split(",")
-            # print 'split'
-            # print vals
             if len(vals) > 1:
-            	#print 'len -----------', len(vals)
-            	#print 'array 1'
-            	#print vals[1]
                 data=float(vals[1])
 
             else:
@@ -255,10 +226,7 @@ while True:
     	fix_stim.setAutoDraw(True)
 
     elif block[0] == 'user':
-        score_text.setAutoDraw(True)
-        text.setAutoDraw(True)
-        fix_stim.setAutoDraw(False)
-
+        
         text.text = 'You run'
         if data < float(0):
             #print 'pause', data, clock.getTime()
@@ -272,9 +240,6 @@ while True:
             running = True
 
     else:
-        score_text.setAutoDraw(True)
-        text.setAutoDraw(True)
-        fix_stim.setAutoDraw(False)
         text.text = 'Free run'
 
 
@@ -285,6 +250,13 @@ while True:
 
     #change block (user or free)
     if clock.getTime() >= block[1]:
+
+        #if last block was fixation
+        if block[0] == 'fixation':
+            score_text.setAutoDraw(True)
+            text.setAutoDraw(True)
+            fix_stim.setAutoDraw(False)
+
         block_index+=1
         clock.reset()
 
