@@ -54,8 +54,9 @@ expInfo['expName'] = expName
 log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 
 
-############### show instructions while waiting for 5 ###############
+############### show instructions while waiting for 10s ###############
 win = visual.Window([800,600])
+#win = visual.Window(fullscr=True)
 
 #blink = visual.PatchStim(win=win, size=([800,600]),color=(1.0, 1.0, 1.0), opacity=0.8)
 
@@ -107,14 +108,13 @@ while show_instructions:
         show_instructions = False
         #blink.setAutoDraw(False)
 
-
 print 'lumina ok'
  
 
 #system calls to initialize the socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-#TCP_IP = ''
+TCP_IP = ''
 s.bind((TCP_IP, TCP_PORT))
 s.listen(1)
 
@@ -176,7 +176,7 @@ for row in content:
 
 
 #set up screen
-mov = visual.MovieStim(win, 'mindrun.mp4', size=[320,240],
+mov = visual.MovieStim(win, 'mindrun.mp4', size=[200,300],
                        flipVert=False, flipHoriz=False, loop=True)
 
 text = visual.TextStim(win=win, ori=0, name='text',
@@ -185,7 +185,7 @@ text = visual.TextStim(win=win, ori=0, name='text',
     color=u'orange', colorSpace=u'rgb', opacity=1,
     alignHoriz='center',depth=-1.0)
 
-text.setAutoDraw(True)
+
 
 
 #set up clock and score
@@ -194,7 +194,7 @@ global_clock = core.Clock()
 block_index = 0
 score = 0.0
 score_size = 0.2
-running = True
+running = False
 
 score_text = visual.TextStim(win=win, ori=0, name='text',
     text=u"0",    font=u'Arial',
@@ -202,7 +202,7 @@ score_text = visual.TextStim(win=win, ori=0, name='text',
     color=u'orange', colorSpace=u'rgb', opacity=1,
     alignHoriz='center',depth=-1.0)
 
-score_text.setAutoDraw(True)
+
 
 from ast import literal_eval
 #start receiving values from socket
@@ -216,24 +216,24 @@ while True:
 
         #######################################
         data = conn.recv(BUFFER_SIZE)
-        print 'raw', len(data)
-        #fyiprint data
+        #print 'raw', len(data)
+        #print data
         #tcp_data=data
         #tcp_data=data.replace('\000', ','); # remove null byte
         tcp_data=str(data.split('\000')[0])
         #print "%s (%s) (%s)" %('tcp_data', tcp_data, tcp_buffer)
-        print 'no null'
+        #print 'no null', tcp_data
         #print tcp_data
         if tcp_data != '\000' and tcp_data != "" and \
             "nan" not in tcp_data.lower():
 
             vals=tcp_data.split(",")
-            print 'split'
-            print vals
+            # print 'split'
+            # print vals
             if len(vals) > 1:
-            	print 'len -----------', len(vals)
-            	print 'array 1'
-            	print vals[1]
+            	#print 'len -----------', len(vals)
+            	#print 'array 1'
+            	#print vals[1]
                 data=float(vals[1])
 
             else:
@@ -246,7 +246,7 @@ while True:
         # data = float(data.split('\n')[0])
         #######################################
 
-        log_file.write(str(data)+'\n') 
+        #log_file.write(str(data)+'\n') 
 
     except socket.error as ex:
         data = float(0.0)
@@ -255,19 +255,26 @@ while True:
     	fix_stim.setAutoDraw(True)
 
     elif block[0] == 'user':
-        text.text = 'User'
+        score_text.setAutoDraw(True)
+        text.setAutoDraw(True)
+        fix_stim.setAutoDraw(False)
+
+        text.text = 'You run'
         if data < float(0):
-            print 'pause', data, clock.getTime()
+            #print 'pause', data, clock.getTime()
             mov.pause()
             #global_clock.pause()
             running = False
 
         elif data > float(0):
-            print 'play', data, clock.getTime()
+            #print 'play', data, clock.getTime()
             mov.play()
             running = True
 
     else:
+        score_text.setAutoDraw(True)
+        text.setAutoDraw(True)
+        fix_stim.setAutoDraw(False)
         text.text = 'Free run'
 
 
@@ -291,9 +298,9 @@ while True:
         break
 
     #update screen
-    if block[0] is not 'fixation':
-	    score_text.text = str(int(score))
-	    mov.draw()
+    if block[0] != 'fixation':
+        score_text.text = str(int(score))
+        mov.draw()
     win.flip()
 
     if event.getKeys(keyList=['escape','q']):
