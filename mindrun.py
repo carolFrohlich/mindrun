@@ -13,7 +13,7 @@ def quit():
     core.quit()
 
 
-LUMINA = 0
+LUMINA = 1
 LUMINA_TRIGGER = 4
 
 ## initialize communication with the lumina
@@ -55,8 +55,8 @@ log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 
 
 ############### show instructions while waiting for 10s ###############
-win = visual.Window([800,600])
-#win = visual.Window(fullscr=True)
+#win = visual.Window([800,600])
+win = visual.Window(fullscr=True)
 
 #blink = visual.PatchStim(win=win, size=([800,600]),color=(1.0, 1.0, 1.0), opacity=0.8)
 
@@ -86,6 +86,20 @@ TCP_PORT = int(expInfo['TCP Port'])   # TCP port number
 BUFFER_SIZE = 1024
 
 
+#system calls to initialize the socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+TCP_IP = ''
+s.bind((TCP_IP, TCP_PORT))
+s.listen(1)
+
+print('Waiting for connection on %s:%s'%(TCP_IP,TCP_PORT))
+
+conn, addr = s.accept()
+s.setblocking(0)
+conn.setblocking(0)
+print 'connection ok'  
+
 
 while show_instructions:
 
@@ -103,7 +117,7 @@ while show_instructions:
                 text_instruct.setAutoDraw(False)
                 show_instructions = False
     else:
-        time.sleep(10)
+        time.sleep(3)
         text_instruct.setAutoDraw(False)
         show_instructions = False
         #blink.setAutoDraw(False)
@@ -111,19 +125,7 @@ while show_instructions:
 print 'lumina ok'
  
 
-#system calls to initialize the socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-TCP_IP = ''
-s.bind((TCP_IP, TCP_PORT))
-s.listen(1)
-
-print('Waiting for connection on %s:%s'%(TCP_IP,TCP_PORT))
-
-conn, addr = s.accept()
-s.setblocking(0)
-conn.setblocking(0)
-print 'connection ok'        
+      
 
 # read and discard data from the socket
 # data = '1'
@@ -160,7 +162,7 @@ for row in content:
 
 
 #set up screen
-mov = visual.MovieStim(win, 'mindrun.mp4', size=[200,300],
+mov = visual.MovieStim(win, 'mindrun.mp4', size=[300,450],
                        flipVert=False, flipHoriz=False, loop=True)
 
 text = visual.TextStim(win=win, ori=0, name='text',
@@ -203,11 +205,20 @@ while True:
         if tcp_data != '\000' and tcp_data != "" and \
             "nan" not in tcp_data.lower():
 
+            print 'data:', len(data)
+            print data
+            print 'clean data:', len(tcp_data)
+            print tcp_data
+
             vals=tcp_data.split(",")
+            print 'split:'
+            print vals
+
             if len(vals) > 1:
                 data=float(vals[1])
 
             else:
+            	print 'tcp data'
                 data=float(tcp_data)
 
 
