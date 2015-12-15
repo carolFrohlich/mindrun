@@ -4,6 +4,19 @@ import time
 
 #python tcp_send_1d.py -infile=test.1D -tcphost=127.0.0.1 -tcpport=8000 -delay=0.5
 
+#instructions for each type of experiment
+#TODO: find a better way to store instructions
+instructions = {
+    'demo': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, \nsed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n Ut enim ad minim veniam, quis nostrud exercitation\n ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+    'feedback': "The goal of this task is to make your character run using your own brain activity.\n\nOn the bottom center of the screen there will be instructions to let you know who is playing the game.\n\nWhen the instructions say 'You Run', focus your attention to make your character run. \n\nWhen the instructions say 'Free Run' you may rest quietly with your eyes open and watch the game.",
+    'nofeedback': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, \nsed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n Ut enim ad minim veniam, quis nostrud exercitation\n ullamco laboris nisi ut aliquip ex ea commodo consequat.'
+}
+
+#design file
+design = { 'demo': 'demo.csv',
+           'feedback': 'dev.csv',
+           'nofeedback': 'dev.csv' }
+fake_data = 'fake_data.csv'
 
 def quit():
     log_file.close()
@@ -13,7 +26,7 @@ def quit():
     core.quit()
 
 
-LUMINA = 1
+LUMINA = 0
 LUMINA_TRIGGER = 4
 
 ## initialize communication with the lumina
@@ -40,16 +53,30 @@ if LUMINA == 1:
         sys.exit(1)
 
 
-#--- TCPIP RECV - edited below to include IP address and TCP port in dialogue
-# Store info about the experiment session
-expName = u'net_text'  # from the Builder filename that created this script
-expInfo = {'Participant':'', 'Session':'001','IP Address':'127.0.0.1  ', 'TCP Port':'8000'}
-dlg = gui.DlgFromDict(dictionary=expInfo, title=expName, order=['Participant','Session','IP Address','TCP Port'])
-if dlg.OK == False: core.quit()  # user pressed cancel
-expInfo['date'] = data.getDateStr()  # add a simple timestamp
-expInfo['expName'] = expName
-#--- TCPIP RECV 
+while True:
+    #--- TCPIP RECV - edited below to include IP address and TCP port in dialogue
+    # Store info about the experiment session
+    expName = u'Mindrun'
+    expInfo = {'Participant':'', 'Session':'001','IP Address':'', 'TCP Port':'8000', 'Type (Demo, Feedback, No Feedback)': 'Demo            '}
+    dlg = gui.DlgFromDict(dictionary=expInfo, title=expName, order=['Participant','Session','IP Address','TCP Port', 'Type (Demo, Feedback, No Feedback)'])
+    if dlg.OK == False: core.quit()  # user pressed cancel
+    expInfo['date'] = data.getDateStr()  # add a simple timestamp
+    expInfo['expName'] = expName
 
+
+    #resolve type of experiment
+    experiment = expInfo['Type (Demo, Feedback, No Feedback)'].replace(' ', '').lower()
+
+    if experiment in ['demo', 'feedback', 'nofeedback']:
+        break
+    else:
+        error_dlg = gui.Dlg(title="Error")
+        error_dlg.addText('Error. Experiment type '+  experiment + ' not valid.')
+        error_dlg.show()
+        if error_dlg.OK == False: core.quit()
+
+
+instruction_txt = instructions[experiment] 
 
 log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 
@@ -58,21 +85,14 @@ log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 #win = visual.Window([800,600])
 win = visual.Window(fullscr=True)
 
-#blink = visual.PatchStim(win=win, size=([800,600]),color=(1.0, 1.0, 1.0), opacity=0.8)
-
 instructionsClock = core.Clock()
-text_instruct = visual.TextStim(win=win, ori=0, name='text_instruct',
-    text="The goal of this task is to make your character run using your own brain activity.\n\nOn the bottom center of the screen there will be instructions to let you know who is playing the game.\n\nWhen the instructions say 'You Run', focus your attention to make your character run. \n\nWhen the instructions say 'Free Run' you may rest quietly with your eyes open and watch the game.",    font='Arial',
-    pos=[0, 0], height=0.085, wrapWidth=None,
-    color='white', colorSpace='rgb', opacity=1,
-    depth=0.0)
+text_instruct = visual.TextStim(win=win, name='text_instruct', text=instruction_txt, height=0.085, color='white', font='Arial')
 
 text_instruct.setAutoDraw(True)
-#blink.setAutoDraw(True)
 show_instructions = True
 win.flip()
 
-
+    
 if LUMINA == 1:
 	lumina_dev.clear_response_queue()
 
@@ -106,9 +126,7 @@ while show_instructions:
     if event.getKeys(keyList=['escape','q']):
         quit()
 
-
     if LUMINA == 1:
-    	#print 'waiting for lumina'
         lumina_dev.poll_for_response()
         while lumina_dev.response_queue_size() > 0:
             response = lumina_dev.get_next_response()
@@ -120,40 +138,24 @@ while show_instructions:
         time.sleep(3)
         text_instruct.setAutoDraw(False)
         show_instructions = False
-        #blink.setAutoDraw(False)
 
 print 'lumina ok'
  
 
-      
 
-# read and discard data from the socket
-# data = '1'
-# while len(data) > 0:
-#     try:
-#     	data = conn.recv(1024)
-#     	print "just cleaned %d bytes of data from buffer"%(len(data))
-#     except socket.error as ex:
-#     	data=[]
+##################### instructions finish, we are connected #####################
 
-##################### instructions finish, we are connected, 30s fixation #####################
+#start fixation screen
 fixation_clock = core.Clock()
-
-
-
-fix_stim = visual.TextStim(win=win, ori=0, name='fixation',
-    text="+",    font='Arial',
-    pos=[0, 0], height=0.8, wrapWidth=None,
-    color='white', colorSpace='rgb', opacity=1,
-    depth=0.0)
+fix_stim = visual.TextStim(win=win, name='fixation', text="+", font='Arial', height=0.8, color='white')
 
 fix_stim.setAutoDraw(True)
 win.flip()
 
 
-# read csv file
+# read design file
 import csv
-csvfile = open('mindrun.csv', 'rb')
+csvfile = open(design[experiment] , 'rb')
 content = csv.reader(csvfile, delimiter=',')
 blocks  = []
 content.next()
@@ -162,16 +164,9 @@ for row in content:
 
 
 #set up screen
-mov = visual.MovieStim(win, 'mindrun.mp4', size=[300,450],
-                       flipVert=False, flipHoriz=False, loop=True)
+mov = visual.MovieStim(win, 'mindrun.mp4', size=[300,450], flipVert=False, flipHoriz=False, loop=True)
 
-text = visual.TextStim(win=win, ori=0, name='text',
-    text=u"'User'\r\n",    font=u'Arial',
-    pos=[0, -0.8], height=0.2, wrapWidth=None,
-    color=u'orange', colorSpace=u'rgb', opacity=1,
-    alignHoriz='center',depth=-1.0)
-
-
+text = visual.TextStim(win=win, name='text', text=u"'User'\r\n", font=u'Arial', pos=[0, -0.8], height=0.2, color=u'orange')
 
 
 #set up clock and score
@@ -179,85 +174,110 @@ clock = core.Clock()
 global_clock = core.Clock()
 block_index = 0
 score = 0.0
-score_size = 0.2
 running = False
 
-score_text = visual.TextStim(win=win, ori=0, name='text',
-    text=u"0",    font=u'Arial',
-    pos=[0, 0.7], height=score_size, wrapWidth=None,
-    color=u'orange', colorSpace=u'rgb', opacity=1,
-    alignHoriz='center',depth=-1.0)
+#use fake data or real data?
+fake_run = False
+if experiment == 'demo' or experiment == 'nofeedback':
+    fake_run = True
+    csvfile = open(fake_data , 'rb')
+    content = csv.reader(csvfile, delimiter=',')
+    fake_blocks  = []
+    content.next()
+    for row in content:
+         fake_blocks.append((row[0], int(row[1])))
+
+
+    fake_index = 0
+    fake_block = None
+    fake_clock = core.Clock()
+
+
+
+score_text = visual.TextStim(win=win, name='text', text=u"0", font=u'Arial', pos=[0, 0.7], height=0.2, color=u'orange')
 
 data=[]
 block = None
-#start receiving values from socket
+
+
 while True:
     
     block = blocks[block_index]
+    #get data from fake file or socket
 
-    try:
-        #######################################
-        #use this code when working with real data
+    if fake_run:
+        fake_block = fake_blocks[fake_index]
+        if fake_clock.getTime() >= fake_block[1]:
+            fake_index += 1
+        if fake_index >= len(fake_blocks): #if fake file ends, read file again
+            fake_index = 0
 
-        #######################################
-        data = conn.recv(BUFFER_SIZE)
-        tcp_data=str(data.split('\000')[0])
-        if tcp_data != '\000' and tcp_data != "" and \
-            "nan" not in tcp_data.lower():
-
-            print 'data:', len(data)
-            print data
-            print 'clean data:', len(tcp_data)
-            print tcp_data
-
-            vals=tcp_data.split(",")
-            print 'split:'
-            print vals
-
-            if len(vals) > 1:
-                data=float(vals[1])
-
-            else:
-            	print 'tcp data'
-                data=float(tcp_data)
+        #run or not?
+        if fake_block[0] == 'run':
+            data = 1
+        else:
+            data = -1
 
 
-        #######################################
-        #use this when testing with tcp_send_1d
-        # data = conn.recv(BUFFER_SIZE)
-        # data = float(data.split('\n')[0])
-        #######################################
+    else:
+        try:
+            #######################################
+            #use this code when working with real data
+            #######################################
+            # data = conn.recv(BUFFER_SIZE)
+            # tcp_data=str(data.split('\000')[0])
+            # if tcp_data != '\000' and tcp_data != "" and "nan" not in tcp_data.lower():
 
-        #log_file.write(str(data)+'\n') 
+            #     vals=tcp_data.split(",")
 
-    except socket.error as ex:
-        data = float(0.0)
-        
+            #     if len(vals) > 1:
+            #         data=float(vals[1])
+            #     else:
+            #         data=float(tcp_data)
+
+            #######################################
+
+
+            #######################################
+            #use this when testing with tcp_send_1d
+            data = conn.recv(BUFFER_SIZE)
+            data = float(data.split('\n')[0])
+            #######################################
+
+            #log_file.write(str(data)+'\n') 
+
+        except socket.error as ex:
+            data = float(0.0)
+
+    
     if block[0] == 'fixation':
     	fix_stim.setAutoDraw(True)
 
     elif block[0] == 'user':
         
-        text.text = 'You run'
+        text.text = 'You Run'
         if data < float(0):
-            #print 'pause', data, clock.getTime()
             mov.pause()
             #global_clock.pause()
             running = False
 
         elif data > float(0):
-            #print 'play', data, clock.getTime()
             mov.play()
             running = True
 
+    elif block[0] == 'button':
+        text.text = 'Press button'
+        mov.pause()
+        running = False
+
     else:
-        text.text = 'Free run'
+        text.text = 'Free Run'
 
 
     #calculate score score
     if running:
-        bonus = global_clock.getTime() / 100.0
-        score +=0.1 + bonus
+        bonus = global_clock.getTime() / 600.0
+        score += 0.1 + bonus
 
     #change block (user or free)
     if clock.getTime() >= block[1]:
@@ -275,6 +295,7 @@ while True:
             mov.play()
             running = True
         print 'change user'
+
 
     #finish movie if we ran all blocks    
     if block_index == len(blocks):
@@ -298,36 +319,22 @@ score_text.setAutoDraw(False)
 ##################### experiment finished, go to thanks screen #####################
 
 #creating text stim
-your_score = visual.TextStim(win=win, ori=0, name='your_score',
-    text=u"Your score is",    font=u'Arial',
-    pos=[0, 0.5], height=0.2, wrapWidth=None,
-    color=u'orange', colorSpace=u'rgb', opacity=1,
-    alignHoriz='center',depth=-1.0)
+your_score = visual.TextStim(win=win, name='yourscore', text=u"Your score is", font=u'Arial', pos=[0, 0.5], height=0.2, color=u'orange')
 your_score.setAutoDraw(True)
 
-score_text = visual.TextStim(win=win, ori=0, name='score',
-    text=str(int(score)),    font=u'Arial',
-    pos=[0, 0], height=0.8, wrapWidth=None,
-    color=u'orange', colorSpace=u'rgb', opacity=1,
-    alignHoriz='center',depth=-1.0)
+score_text = visual.TextStim(win=win, name='score', text=str(int(score)), font=u'Arial', height=0.8, color=u'orange')
 score_text.setAutoDraw(True)
 
-thanks = visual.TextStim(win=win, ori=0, name='thanks',
-    text=u"Thank you",    font=u'Arial',
-    pos=[0, -0.5], height=0.2, wrapWidth=None,
-    color=u'orange', colorSpace=u'rgb', opacity=1,
-    alignHoriz='center',depth=-1.0)
+thanks = visual.TextStim(win=win, name='thanks', text=u"Thank you", font=u'Arial', pos=[0, -0.5], height=0.2, color=u'orange')
 thanks.setAutoDraw(True)
 
 win.flip()
-
 thanks_clock = core.Clock()
 
 #start thanks loop
 while thanks_clock.getTime() <= 30.0:
     if event.getKeys(keyList=['escape','q']):
         quit()
-
     fix_stim.setAutoDraw(True)
 
 
