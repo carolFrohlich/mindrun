@@ -19,7 +19,8 @@ design = { 'demo': 'demo.csv',
 fake_data = 'fake_data.csv'
 
 def quit():
-    log_file.close()
+    if experiment == 'feedback':
+        log_file.close()
     conn.close()
     s.close()
     win.close()
@@ -78,7 +79,8 @@ while True:
 
 instruction_txt = instructions[experiment] 
 
-log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
+if experiment == 'feedback':
+    log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 
 
 ############### show instructions while waiting for 10s ###############
@@ -244,7 +246,8 @@ while True:
             data = float(data.split('\n')[0])
             #######################################
 
-            #log_file.write(str(data)+'\n') 
+            if experiment == 'feedback':
+                log_file.write(str(data)+'\n') 
 
         except socket.error as ex:
             data = float(0.0)
