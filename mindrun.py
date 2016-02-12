@@ -85,7 +85,7 @@ if experiment == 'feedback':
 
 ############### show instructions while waiting for 10s ###############
 #win = visual.Window([800,600])
-win = visual.Window(fullscr=True)
+win = visual.Window(fullscr=False)
 
 instructionsClock = core.Clock()
 text_instruct = visual.TextStim(win=win, name='text_instruct', text=instruction_txt, height=0.085, color='white', font='Arial')
@@ -211,6 +211,7 @@ while True:
         fake_block = fake_blocks[fake_index]
         if fake_clock.getTime() >= fake_block[1]:
             fake_index += 1
+            fake_clock = core.Clock()
         if fake_index >= len(fake_blocks): #if fake file ends, read file again
             fake_index = 0
 
@@ -265,7 +266,8 @@ while True:
             running = False
 
         elif data > float(0):
-            mov.play()
+            if mov.status != 1:
+                mov.play()
             running = True
 
     elif block[0] == 'button':
@@ -295,7 +297,8 @@ while True:
         clock.reset()
 
         if block_index < len(blocks) and blocks[block_index][0] == 'free':
-            mov.play()
+            if mov.status != 1:
+                mov.play()
             running = True
         print 'change user'
 
