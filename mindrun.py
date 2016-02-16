@@ -1,6 +1,7 @@
 from psychopy import visual, core, event, gui, data
 import math
 import time
+import create_nofeedback
 
 #python tcp_send_1d.py -infile=test.1D -tcphost=127.0.0.1 -tcpport=8000 -delay=0.5
 
@@ -16,6 +17,8 @@ instructions = {
 design = { 'demo': 'demo.csv',
            'feedback': 'dev.csv',
            'nofeedback': 'dev.csv' }
+
+
 fake_data = 'fake_data.csv'
 
 def quit():
@@ -81,7 +84,10 @@ instruction_txt = instructions[experiment]
 
 if experiment == 'feedback':
     log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
-
+else:
+    f_name = expInfo['Participant'] + expInfo['date'] +'_'+experiment+'.csv'
+    create_nofeedback.random_file(f_name, 5*60)
+    fake_data = f_name
 
 ############### show instructions while waiting for 10s ###############
 #win = visual.Window([800,600])
