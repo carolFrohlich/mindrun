@@ -8,9 +8,9 @@ import create_nofeedback
 #instructions for each type of experiment
 #TODO: find a better way to store instructions
 instructions = {
-    'demo': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, \nsed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n Ut enim ad minim veniam, quis nostrud exercitation\n ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+    'demo': "You will now watch a demo of the video game you will play in a little bit.\n You should pay attention to the instructions on the bottom of the screen but in this demo your brain activity will \n not make the character run. Please rest quietly with your eyes open and watch the game." ,
     'feedback': "The goal of this task is to make your character run using your own brain activity.\n\nOn the bottom center of the screen there will be instructions to let you know who is playing the game.\n\nWhen the instructions say 'You Run', focus your attention to make your character run. \n\nWhen the instructions say 'Free Run' you may rest quietly with your eyes open and watch the game.",
-    'nofeedback': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, \nsed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n Ut enim ad minim veniam, quis nostrud exercitation\n ullamco laboris nisi ut aliquip ex ea commodo consequat.'
+    'nofeedback': "Again you will now watch a demo of the video game. On the bottom center of the screen \n there will be instructions to let you know who is playing the game. When the instructions say \n'You Run', focus your attention to make your character run. When the instructions say 'Free Run' \nyou may rest quietly with your eyes open and watch the game. This time, your brain activity \nwill not make the character run but you should still try your best to focus \nyour attention during 'You Run' and rest during 'Free Run'."
 }
 
 #design file
