@@ -15,8 +15,8 @@ instructions = {
 
 #design file
 design = { 'demo': 'demo.csv',
-           'feedback': 'dev.csv',
-           'nofeedback': 'dev.csv' }
+           'feedback': 'demo.csv',
+           'nofeedback': 'demo.csv' }
 
 
 fake_data = 'fake_data.csv'
@@ -61,7 +61,7 @@ while True:
     #--- TCPIP RECV - edited below to include IP address and TCP port in dialogue
     # Store info about the experiment session
     expName = u'Mindrun'
-    expInfo = {'Participant':'', 'Session':'001','IP Address':'', 'TCP Port':'8000', 'Type (Demo, Feedback, No Feedback)': 'Demo            '}
+    expInfo = {'Participant':'', 'Session':'001','IP Address':'', 'TCP Port':'8000', 'Data Type': '1', 'Type (Demo, Feedback, No Feedback)': 'Demo            '}
     dlg = gui.DlgFromDict(dictionary=expInfo, title=expName, order=['Participant','Session','IP Address','TCP Port', 'Type (Demo, Feedback, No Feedback)'])
     if dlg.OK == False: core.quit()  # user pressed cancel
     expInfo['date'] = data.getDateStr()  # add a simple timestamp
@@ -82,11 +82,25 @@ while True:
 
 instruction_txt = instructions[experiment] 
 
+data_file = 'mindrun_free_1.csv'
+if expInfo['Data Type'] == 2:
+    data_file = 'mindrun_free_2.csv'
+elif expInfo['Data Type'] == 3:
+    data_file = 'mindrun_user_1.csv'
+elif expInfo['Data Type'] == 4:
+    data_file = 'mindrun_user_1.csv'
+
+
+if experiment == 'nofeedback' or experiment == 'feedback':
+    design[experiment] = data_file
+
+
+
 if experiment == 'feedback':
     log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 else:
     f_name = expInfo['Participant'] + expInfo['date'] +'_'+experiment+'.csv'
-    create_nofeedback.random_file(f_name, 5*60)
+    create_nofeedback.random_file(f_name, 8*60)
     fake_data = f_name
 
 ############### show instructions while waiting for 10s ###############
