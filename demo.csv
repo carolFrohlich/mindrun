@@ -1,9 +1,9 @@
 player,duration
-fixation,2
-user,20
+fixation,10
+user,30
 button,2
-free,10
+free,60
 button,2
-user,15
+user,60
 button,2
-free,8
+free,30

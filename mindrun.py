@@ -30,7 +30,7 @@ def quit():
     core.quit()
 
 
-LUMINA = 0
+LUMINA = 1
 LUMINA_TRIGGER = 4
 
 ## initialize communication with the lumina
@@ -103,17 +103,6 @@ else:
     create_nofeedback.random_file(f_name, 8*60)
     fake_data = f_name
 
-############### show instructions while waiting for 10s ###############
-#win = visual.Window([800,600])
-win = visual.Window(fullscr=False)
-
-instructionsClock = core.Clock()
-text_instruct = visual.TextStim(win=win, name='text_instruct', text=instruction_txt, height=0.085, color='white', font='Arial')
-
-text_instruct.setAutoDraw(True)
-show_instructions = True
-win.flip()
-
     
 if LUMINA == 1:
 	lumina_dev.clear_response_queue()
@@ -135,17 +124,41 @@ TCP_IP = ''
 s.bind((TCP_IP, TCP_PORT))
 s.listen(1)
 
-print('Waiting for connection on %s:%s'%(TCP_IP,TCP_PORT))
+print('Waiting for connection on %s:%s press enter to terminate'%(TCP_IP,TCP_PORT))
 
-conn, addr = s.accept()
+inputs,outputs,errs = select.select([sys.stdin,s],[],[])
+print "select returned",inputs,outputs,errs
+for sin in inputs:
+	if sin == s:
+		conn, addr = s.accept()
+		print 'received connection, setting parameters',conn,addr
+	else:
+		print 'terminating ...'
+		s.close()
+		sys.exit(0)
+
+
 s.setblocking(0)
 conn.setblocking(0)
 print 'connection ok'  
+
+############### show instructions while waiting for 10s ###############
+#win = visual.Window([800,600])
+win = visual.Window(fullscr=True)
+
+instructionsClock = core.Clock()
+text_instruct = visual.TextStim(win=win, name='text_instruct', text=instruction_txt, height=0.085, color='white', font='Arial')
+
+text_instruct.setAutoDraw(True)
+show_instructions = True
+win.flip()
 
 
 while show_instructions:
 
     if event.getKeys(keyList=['escape','q']):
+    	conn.close()
+    	s.close()
         quit()
 
     if LUMINA == 1:
@@ -163,7 +176,13 @@ while show_instructions:
 
 print 'lumina ok'
  
-
+# clear the data buffer
+data='0'
+while data:
+	try:
+		data = conn.recv(BUFFER_SIZE)
+	except socket.error:
+		data = ''
 
 ##################### instructions finish, we are connected #####################
 
@@ -247,24 +266,24 @@ while True:
             #######################################
             #use this code when working with real data
             #######################################
-            # data = conn.recv(BUFFER_SIZE)
-            # tcp_data=str(data.split('\000')[0])
-            # if tcp_data != '\000' and tcp_data != "" and "nan" not in tcp_data.lower():
+            data = conn.recv(BUFFER_SIZE)
+            tcp_data=str(data.split('\000')[0])
+            if tcp_data != '\000' and tcp_data != "" and "nan" not in tcp_data.lower():
 
-            #     vals=tcp_data.split(",")
+                vals=tcp_data.split(",")
 
-            #     if len(vals) > 1:
-            #         data=float(vals[1])
-            #     else:
-            #         data=float(tcp_data)
+                if len(vals) > 1:
+                    data=float(vals[1])
+                else:
+                    data=float(tcp_data)
 
             #######################################
 
 
             #######################################
             #use this when testing with tcp_send_1d
-            data = conn.recv(BUFFER_SIZE)
-            data = float(data.split('\n')[0])
+            # data = conn.recv(BUFFER_SIZE)
+            # data = float(data.split('\n')[0])
             #######################################
 
             if experiment == 'feedback':
@@ -272,6 +291,9 @@ while True:
 
         except socket.error as ex:
             data = float(0.0)
+        except Exception as e:
+        	print "caught exception:", e.message, e.args
+        	print "data: %s, tcp_data: %s"%(data, tcp_data)
 
     
     if block[0] == 'fixation':
@@ -334,7 +356,9 @@ while True:
     win.flip()
 
     if event.getKeys(keyList=['escape','q']):
-        quit()
+    	conn.close()
+    	s.close()
+    	quit()
 
 
 #finished movie, clean screen
