@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from psychopy import visual, core, event, gui, data
 import math
 import time
@@ -97,9 +99,9 @@ if experiment == 'nofeedback' or experiment == 'feedback':
 
 
 if experiment == 'feedback':
-    log_file = open(expInfo['Participant'] + expInfo['date'] +'.csv','wb')
+    log_file = open("data/" + expInfo['Participant'] + expInfo['date'] +'.csv','wb')
 else:
-    f_name = expInfo['Participant'] + expInfo['date'] +'_'+experiment+'.csv'
+    f_name = "data/" + expInfo['Participant'] + expInfo['date'] +'_'+experiment+'.csv'
     create_nofeedback.random_file(f_name, 8*60)
     fake_data = f_name
 
@@ -108,39 +110,40 @@ if LUMINA == 1:
 	lumina_dev.clear_response_queue()
 
 
-#--- start TCPIP RECV 
-# initialize TCP socket to receive data
-import socket
-import select
-TCP_IP = expInfo['IP Address'].strip() # use localhost
-TCP_PORT = int(expInfo['TCP Port'])   # TCP port number
-BUFFER_SIZE = 1024
+if experiment != 'demo':
+	#--- start TCPIP RECV 
+	# initialize TCP socket to receive data
+	import socket
+	import select
+	TCP_IP = expInfo['IP Address'].strip() # use localhost
+	TCP_PORT = int(expInfo['TCP Port'])   # TCP port number
+	BUFFER_SIZE = 1024
 
 
-#system calls to initialize the socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	#system calls to initialize the socket
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-TCP_IP = ''
-s.bind((TCP_IP, TCP_PORT))
-s.listen(1)
+	TCP_IP = ''
+	s.bind((TCP_IP, TCP_PORT))
+	s.listen(1)
 
-print('Waiting for connection on %s:%s press enter to terminate'%(TCP_IP,TCP_PORT))
+	print('Waiting for connection on %s:%s press enter to terminate'%(TCP_IP,TCP_PORT))
 
-inputs,outputs,errs = select.select([sys.stdin,s],[],[])
-print "select returned",inputs,outputs,errs
-for sin in inputs:
-	if sin == s:
-		conn, addr = s.accept()
-		print 'received connection, setting parameters',conn,addr
-	else:
-		print 'terminating ...'
-		s.close()
-		sys.exit(0)
+	inputs,outputs,errs = select.select([sys.stdin,s],[],[])
+	print "select returned",inputs,outputs,errs
+	for sin in inputs:
+		if sin == s:
+			conn, addr = s.accept()
+			print 'received connection, setting parameters',conn,addr
+		else:
+			print 'terminating ...'
+			s.close()
+			sys.exit(0)
 
 
-s.setblocking(0)
-conn.setblocking(0)
-print 'connection ok'  
+	s.setblocking(0)
+	conn.setblocking(0)
+	print 'connection ok'  
 
 ############### show instructions while waiting for 10s ###############
 #win = visual.Window([800,600])
@@ -156,33 +159,41 @@ win.flip()
 
 while show_instructions:
 
-    if event.getKeys(keyList=['escape','q']):
-    	conn.close()
-    	s.close()
-        quit()
+	keys = []
+	keys = event.getKeys(keyList=['escape','q', 't'])
+	for k in keys:
+		if k == 't':
+			text_instruct.setAutoDraw(False)
+			show_instructions = False
+		else:
+			if experiment != "demo":
+				conn.close()
+				s.close()
+				quit()
 
-    if LUMINA == 1:
-        lumina_dev.poll_for_response()
-        while lumina_dev.response_queue_size() > 0:
-            response = lumina_dev.get_next_response()
-            if response["pressed"]:
-                #print "Lumina received: %s, %d"%(response["key"],response["key"])
-                text_instruct.setAutoDraw(False)
-                show_instructions = False
-    else:
-        time.sleep(3)
-        text_instruct.setAutoDraw(False)
-        show_instructions = False
+	if LUMINA == 1:
+		lumina_dev.poll_for_response()
+		while lumina_dev.response_queue_size() > 0:
+		    response = lumina_dev.get_next_response()
+		    if response["pressed"]:
+		        #print "Lumina received: %s, %d"%(response["key"],response["key"])
+		        text_instruct.setAutoDraw(False)
+		        show_instructions = False
+	else:
+	    time.sleep(3)
+	    text_instruct.setAutoDraw(False)
+	    show_instructions = False
 
 print 'lumina ok'
- 
-# clear the data buffer
-data='0'
-while data:
-	try:
-		data = conn.recv(BUFFER_SIZE)
-	except socket.error:
-		data = ''
+
+if experiment != 'demo': 
+	# clear the data buffer
+	data='0'
+	while data:
+		try:
+			data = conn.recv(BUFFER_SIZE)
+		except socket.error:
+			data = ''
 
 ##################### instructions finish, we are connected #####################
 
