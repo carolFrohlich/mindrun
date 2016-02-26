@@ -4,15 +4,15 @@ from psychopy import visual, core, event, gui, data
 import math
 import time
 import create_nofeedback
+import sys
 
 #python tcp_send_1d.py -infile=test.1D -tcphost=127.0.0.1 -tcpport=8000 -delay=0.5
 
 #instructions for each type of experiment
-#TODO: find a better way to store instructions
 instructions = {
-    'demo': "You will now watch a demo of the video game you will play in a little bit.\n You should pay attention to the instructions on the bottom of the screen but in this demo your brain activity will \n not make the character run. Please rest quietly with your eyes open and watch the game." ,
-    'feedback': "The goal of this task is to make your character run using your own brain activity.\n\nOn the bottom center of the screen there will be instructions to let you know who is playing the game.\n\nWhen the instructions say 'You Run', focus your attention to make your character run. \n\nWhen the instructions say 'Free Run' you may rest quietly with your eyes open and watch the game.",
-    'nofeedback': "Again you will now watch a demo of the video game. On the bottom center of the screen \n there will be instructions to let you know who is playing the game. When the instructions say \n'You Run', focus your attention to make your character run. When the instructions say 'Free Run' \nyou may rest quietly with your eyes open and watch the game. This time, your brain activity \nwill not make the character run but you should still try your best to focus \nyour attention during 'You Run' and rest during 'Free Run'."
+    'demo': ["You will now watch a demo of the video game. Pay attention so you can learn how to play the game yourself.\n\n When the instructions say 'Push a Button' press any button on the game controller."] ,
+    'feedback': ["Now it is time for your to play the game","yourself.","When the instructions say 'You Run', focus your attention to make the runner go as fast","as it can.","The more focused you are, the more points","you will earn.","When you earn a 'Free Run' just relax and","watch the runner go.","When the instructions say 'Push a Button'","press any button on the game controller."],
+    'nofeedback': ["Now we will measure how well you focus without playing the game. \n\n When the instructions say 'You Run', try to focus your attention as well as you can. \n\n The runner will go but you will not be controlling it. \n\n During 'Free Run' just relax and water the runner go. \n\n When the instructions say 'Push a Button' press any button on the game controller."]
 }
 
 #design file
@@ -90,7 +90,7 @@ if expInfo['Data Type'] == 2:
 elif expInfo['Data Type'] == 3:
     data_file = 'mindrun_user_1.csv'
 elif expInfo['Data Type'] == 4:
-    data_file = 'mindrun_user_1.csv'
+    data_file = 'mindrun_user_2.csv'
 
 
 if experiment == 'nofeedback' or experiment == 'feedback':
@@ -150,12 +150,11 @@ if experiment != 'demo':
 win = visual.Window(fullscr=True)
 
 instructionsClock = core.Clock()
-text_instruct = visual.TextStim(win=win, name='text_instruct', text=instruction_txt, height=0.085, color='white', font='Arial')
-
+text_instruct = visual.TextStim(win=win, name='text_instruct', text=instruction_txt, height=0.09, color='white', font='Arial',alignHoriz='center',alignVert='center')
+text_instruct.size = (0.9,0.8)
 text_instruct.setAutoDraw(True)
 show_instructions = True
 win.flip()
-
 
 while show_instructions:
 

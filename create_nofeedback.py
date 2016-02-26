@@ -10,19 +10,19 @@ def random_file(name, total_seconds):
 
     while time < total_seconds:        
         if run_first:
-            t = random.randint(2,6)
+            t = random.randint(2,8)
             f.write('run,'+str(t)+'\n')
             time += t
 
-            t = random.randint(2,6)
+            t = random.randint(2,8)
             f.write('stop,'+str(t)+'\n')
             time += t
         else:
-            t = random.randint(2,6)
+            t = random.randint(2,8)
             f.write('stop,'+str(t)+'\n')
             time += t
 
-            t = random.randint(2,6)
+            t = random.randint(2,8)
             f.write('run,'+str(t)+'\n')
             time += t
 
