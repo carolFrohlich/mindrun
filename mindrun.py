@@ -10,9 +10,9 @@ import sys
 
 #instructions for each type of experiment
 instructions = {
-    'demo': ["You will now watch a demo of the video game. Pay attention so you can learn how to play the game yourself.\n\n When the instructions say 'Push a Button' press any button on the game controller."] ,
-    'feedback': ["Now it is time for your to play the game","yourself.","When the instructions say 'You Run', focus your attention to make the runner go as fast","as it can.","The more focused you are, the more points","you will earn.","When you earn a 'Free Run' just relax and","watch the runner go.","When the instructions say 'Push a Button'","press any button on the game controller."],
-    'nofeedback': ["Now we will measure how well you focus without playing the game. \n\n When the instructions say 'You Run', try to focus your attention as well as you can. \n\n The runner will go but you will not be controlling it. \n\n During 'Free Run' just relax and water the runner go. \n\n When the instructions say 'Push a Button' press any button on the game controller."]
+    'demo': "demo.jpeg" ,
+    'feedback': "feedback.jpeg",
+    'nofeedback': "nofeedback.jpeg"
 }
 
 #design file
@@ -32,7 +32,7 @@ def quit():
     core.quit()
 
 
-LUMINA = 1
+LUMINA = 0
 LUMINA_TRIGGER = 4
 
 ## initialize communication with the lumina
@@ -150,11 +150,13 @@ if experiment != 'demo':
 win = visual.Window(fullscr=True)
 
 instructionsClock = core.Clock()
-text_instruct = visual.TextStim(win=win, name='text_instruct', text=instruction_txt, height=0.09, color='white', font='Arial',alignHoriz='center',alignVert='center')
-text_instruct.size = (0.9,0.8)
-text_instruct.setAutoDraw(True)
+
+instructions_img = visual.ImageStim(win, image=instruction_txt, pos=(0.0, 0.0), size=(2,2.15), ori=0.0, name=None)
+instructions_img.setAutoDraw(True)
+
 show_instructions = True
 win.flip()
+
 
 while show_instructions:
 
@@ -179,7 +181,7 @@ while show_instructions:
 		        text_instruct.setAutoDraw(False)
 		        show_instructions = False
 	else:
-	    time.sleep(3)
+	    time.sleep(5)
 	    text_instruct.setAutoDraw(False)
 	    show_instructions = False
 
@@ -249,7 +251,7 @@ score_text = visual.TextStim(win=win, name='text', text=u"0", font=u'Arial', pos
 
 data=[]
 block = None
-
+count = 0.0
 
 while True:
     
@@ -308,16 +310,18 @@ while True:
     
     if block[0] == 'fixation':
     	fix_stim.setAutoDraw(True)
+        count = 0.0
 
     elif block[0] == 'user':
         
         text.text = 'You Run'
-        if data < float(0):
+        count += data
+        if count < float(0):
             mov.pause()
             #global_clock.pause()
             running = False
 
-        elif data > float(0):
+        elif count > float(0):
             if mov.status != 1:
                 mov.play()
             running = True
