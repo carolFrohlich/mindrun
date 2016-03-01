@@ -10,9 +10,9 @@ import sys
 
 #instructions for each type of experiment
 instructions = {
-    'demo': "demo.jpeg" ,
-    'feedback': "feedback.jpeg",
-    'nofeedback': "nofeedback.jpeg"
+    'demo': ["demo1.jpeg","demo2.jpeg"] ,
+    'feedback': ["feedback1.jpeg","feedback2.jpeg"],
+    'nofeedback': ["nofeedback1.jpeg","nofeedback2.jpeg"]
 }
 
 #design file
@@ -149,14 +149,38 @@ if experiment != 'demo':
 #win = visual.Window([800,600])
 win = visual.Window(fullscr=True)
 
-instructionsClock = core.Clock()
 
-instructions_img = visual.ImageStim(win, image=instruction_txt, pos=(0.0, 0.0), size=(2,2.15), ori=0.0, name=None)
+instructions_img = visual.ImageStim(win, image=instruction_txt[0], pos=(0.0, 0.0), size=(2,2.15), ori=0.0, name=None)
 instructions_img.setAutoDraw(True)
 
 show_instructions = True
 win.flip()
+c = 0
+while show_instructions:
+    keys = []
+    keys = event.getKeys(keyList=['escape','q', 't','n'])
+    for k in keys:
+        print k
+        if k == 'n':
+            if c == 0:
+                instructions_img.setAutoDraw(False)
+                instructions_img = visual.ImageStim(win, image=instruction_txt[1], pos=(0.0, 0.0), size=(2,2.15), ori=0.0, name=None)
+                instructions_img.setAutoDraw(True)
+                c+=1
+                win.flip()
+            else:
+                instructions_img.setAutoDraw(False)
+                show_instructions = False
+        else:
+            if experiment != "demo":
+                conn.close()
+                s.close()
+                quit()
 
+fix_stim = visual.TextStim(win=win, name='fixation', text="+", font='Arial', height=0.8, color='white')
+fix_stim.setAutoDraw(True)
+win.flip()
+show_instructions = True
 
 while show_instructions:
 
@@ -164,7 +188,7 @@ while show_instructions:
 	keys = event.getKeys(keyList=['escape','q', 't'])
 	for k in keys:
 		if k == 't':
-			text_instruct.setAutoDraw(False)
+			fix_stim.setAutoDraw(False)
 			show_instructions = False
 		else:
 			if experiment != "demo":
@@ -178,11 +202,11 @@ while show_instructions:
 		    response = lumina_dev.get_next_response()
 		    if response["pressed"]:
 		        #print "Lumina received: %s, %d"%(response["key"],response["key"])
-		        text_instruct.setAutoDraw(False)
+		        fix_stim.setAutoDraw(False)
 		        show_instructions = False
 	else:
 	    time.sleep(5)
-	    text_instruct.setAutoDraw(False)
+	    fix_stim.setAutoDraw(False)
 	    show_instructions = False
 
 print 'lumina ok'
