@@ -32,8 +32,9 @@ def quit():
     core.quit()
 
 
-LUMINA = 0
+LUMINA = 1
 LUMINA_TRIGGER = 4
+sum_vals = True
 
 ## initialize communication with the lumina
 
@@ -63,7 +64,7 @@ while True:
     #--- TCPIP RECV - edited below to include IP address and TCP port in dialogue
     # Store info about the experiment session
     expName = u'Mindrun'
-    expInfo = {'Participant':'', 'Session':'001','IP Address':'', 'TCP Port':'8000', 'Data Type': '1', 'Type (Demo, Feedback, No Feedback)': 'Demo            '}
+    expInfo = {'Participant':'', 'Session':'001','IP Address':'', 'TCP Port':'8000', 'Data Type': '1', 'Type (Demo, Feedback, No Feedback)': 'Demo            ', 'Sum Values': 1}
     dlg = gui.DlgFromDict(dictionary=expInfo, title=expName, order=['Participant','Session','IP Address','TCP Port', 'Type (Demo, Feedback, No Feedback)'])
     if dlg.OK == False: core.quit()  # user pressed cancel
     expInfo['date'] = data.getDateStr()  # add a simple timestamp
@@ -83,6 +84,12 @@ while True:
 
 
 instruction_txt = instructions[experiment] 
+
+
+if expInfo['Sum Values'] == 1:
+    sum_vals = True
+else:
+    sum_vals = False
 
 data_file = 'mindrun_free_1.csv'
 if expInfo['Data Type'] == 2:
@@ -339,7 +346,12 @@ while True:
     elif block[0] == 'user':
         
         text.text = 'You Run'
-        count += data
+        
+        if sum_vals:
+            count += data
+        else:
+            count = data
+
         if count < float(0):
             mov.pause()
             #global_clock.pause()
