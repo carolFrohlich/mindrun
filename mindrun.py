@@ -3,19 +3,25 @@
 from psychopy import visual, core, event, gui, data
 import math
 import time
-import sys
 import create_nofeedback
+import sys
+
 #python tcp_send_1d.py -infile=test.1D -tcphost=127.0.0.1 -tcpport=8000 -delay=0.5
 
 #instructions for each type of experiment
 instructions = {
     'demo': ["demo1.jpeg","demo2.jpeg"] ,
     'feedback': ["feedback1.jpeg","feedback2.jpeg"],
-    'nofeedback': ["nofeedback1.jpeg","nofeedback2.jpeg"] }
+    'nofeedback': ["nofeedback1.jpeg","nofeedback2.jpeg"]
+}
 
 #design file
-design = { 'demo': 'demo.csv'}
+design = { 'demo': 'demo.csv',
+           'feedback': 'demo.csv',
+           'nofeedback': 'demo.csv' }
 
+
+fake_data = 'fake_data.csv'
 
 def quit():
     if experiment == 'feedback':
@@ -26,8 +32,12 @@ def quit():
     core.quit()
 
 
+LUMINA = 0
+LUMINA_TRIGGER = 4
+sum_vals = True
+
 ## initialize communication with the lumina
-LUMINA = 1
+
 if LUMINA == 1:
     import pyxid # to interact with the Lumina box
     import sys
@@ -40,6 +50,8 @@ if LUMINA == 1:
     else:
         print "Could not find Lumina device"
         sys.exit(1)
+
+    print lumina_dev
     if lumina_dev.is_response_device():
         lumina_dev.reset_base_timer()
         lumina_dev.reset_rt_timer()
@@ -72,24 +84,28 @@ while True:
 
 
 instruction_txt = instructions[experiment] 
-sum_vals = True if expInfo['Sum Values'] == 1 else False
 
+
+sum_vals = True if expInfo['Sum Values'] == 1 else False
 
 data_file = 'mindrun_free_1.csv'
 if expInfo['Data Type'] is not 1:
     data_file = 'mindrun_user_1.csv'
 
-if experiment is 'nofeedback' or experiment is 'feedback':
+
+if experiment == 'nofeedback' or experiment == 'feedback':
     design[experiment] = data_file
 
 
+
 if experiment == 'feedback':
-    log_file = open("data/" + expInfo['Participant'] + expInfo['date'] +'.csv','wb')
+    log_file = open("data/" + expInfo['Participant'] + expInfo['date'] +'_feedback.csv','wb')
 else:
-    f_name = "data/" + expInfo['Participant'] + expInfo['date'] +'_'+experiment+'.csv'
+    sum_vals = 0
+    f_name = "data/" + expInfo['Participant'] + expInfo['date'] +'_'+experiment+'_random.csv'
     create_nofeedback.random_file(f_name, 8*60)
     fake_data = f_name
-    sum_vals = 0
+    log_file = open("data/" + expInfo['Participant'] + expInfo['date'] +experiment+'.csv','wb')
 
     
 if LUMINA == 1:
@@ -108,6 +124,7 @@ if experiment != 'demo':
 
 	#system calls to initialize the socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 	TCP_IP = ''
 	s.bind((TCP_IP, TCP_PORT))
 	s.listen(1)
@@ -115,6 +132,7 @@ if experiment != 'demo':
 	print('Waiting for connection on %s:%s press enter to terminate'%(TCP_IP,TCP_PORT))
 
 	inputs,outputs,errs = select.select([sys.stdin,s],[],[])
+	print "select returned",inputs,outputs,errs
 	for sin in inputs:
 		if sin == s:
 			conn, addr = s.accept()
@@ -124,13 +142,14 @@ if experiment != 'demo':
 			s.close()
 			sys.exit(0)
 
+
 	s.setblocking(0)
 	conn.setblocking(0)
 	print 'connection ok'  
 
 ############### show instructions while waiting for 10s ###############
 #win = visual.Window([800,600])
-win = visual.Window(fullscr=True)
+win = visual.Window(fullscr=False)
 
 
 instructions_img = visual.ImageStim(win, image=instruction_txt[0], pos=(0.0, 0.0), size=(2,2.15), ori=0.0, name=None)
@@ -143,6 +162,7 @@ while show_instructions:
     keys = []
     keys = event.getKeys(keyList=['escape','q', 't','n'])
     for k in keys:
+        print k
         if k == 'n':
             if c == 0:
                 instructions_img.setAutoDraw(False)
@@ -154,7 +174,10 @@ while show_instructions:
                 instructions_img.setAutoDraw(False)
                 show_instructions = False
         else:
-            quit()
+            if experiment != "demo":
+                conn.close()
+                s.close()
+                quit()
 
 fix_stim = visual.TextStim(win=win, name='fixation', text="+", font='Arial', height=0.8, color='white')
 fix_stim.setAutoDraw(True)
@@ -180,6 +203,7 @@ while show_instructions:
 		while lumina_dev.response_queue_size() > 0:
 		    response = lumina_dev.get_next_response()
 		    if response["pressed"]:
+		        #print "Lumina received: %s, %d"%(response["key"],response["key"])
 		        fix_stim.setAutoDraw(False)
 		        show_instructions = False
 	else:
@@ -203,6 +227,7 @@ if experiment != 'demo':
 #start fixation screen
 fixation_clock = core.Clock()
 fix_stim = visual.TextStim(win=win, name='fixation', text="+", font='Arial', height=0.8, color='white')
+
 fix_stim.setAutoDraw(True)
 win.flip()
 
@@ -219,6 +244,7 @@ for row in content:
 
 #set up screen
 mov = visual.MovieStim(win, 'mindrun.mp4', size=[300,450], flipVert=False, flipHoriz=False, loop=True)
+
 text = visual.TextStim(win=win, name='text', text=u"'User'\r\n", font=u'Arial', pos=[0, -0.8], height=0.2, color=u'orange')
 
 
@@ -240,12 +266,17 @@ if experiment == 'demo' or experiment == 'nofeedback':
     for row in content:
          fake_blocks.append((row[0], int(row[1])))
 
+
     fake_index = 0
     fake_block = None
     fake_clock = core.Clock()
 
+
+
 score_text = visual.TextStim(win=win, name='text', text=u"0", font=u'Arial', pos=[0, 0.7], height=0.2, color=u'orange')
 
+data=[]
+block = None
 count = 0.0
 
 while True:
@@ -262,7 +293,11 @@ while True:
             fake_index = 0
 
         #run or not?
-        data = 1 if fake_block[0] == 'run' else -1
+        if fake_block[0] == 'run':
+            data = 1
+        else:
+            data = -1
+
 
     else:
         try:
@@ -289,7 +324,8 @@ while True:
             # data = float(data.split('\n')[0])
             #######################################
 
-            if experiment == 'feedback': log_file.write(str(data)+'\n') 
+            if experiment == 'feedback':
+                log_file.write(str(data)+'\n') 
 
         except socket.error as ex:
             data = float(0.0)
@@ -300,6 +336,7 @@ while True:
     
     if block[0] == 'fixation':
     	fix_stim.setAutoDraw(True)
+        count = 0.0
 
     elif block[0] == 'user':
         
@@ -310,27 +347,27 @@ while True:
         else:
             count = data
 
-        if count < float(0):
+        if count > float(0):
             mov.pause()
+            #global_clock.pause()
             running = False
 
-        elif count > float(0):
-            if mov.status != 1: mov.play()
+        elif count < float(0):
+            if mov.status != 1:
+                mov.play()
             running = True
 
     elif block[0] == 'button':
         text.text = 'Press button'
         mov.pause()
         running = False
-        count = 0.0
-        #record if user pressed button
         if LUMINA == 1:
             lumina_dev.poll_for_response()
-                if lumina_dev.response_queue_size() > 0:
-                    response = lumina_dev.get_next_response()
-                    #log response
-                    log_file.write(response["pressed"]+str(global_clock.getTime())+'\n') 
-                    
+            if lumina_dev.response_queue_size() > 0:
+                response = lumina_dev.get_next_response()
+                response = 'pressed' if response["pressed"] else 'not pressed'
+                log_file.write(+str(global_clock.getTime())+'\n') 
+
     else:
         text.text = 'Free Run'
 
@@ -356,6 +393,7 @@ while True:
             if mov.status != 1:
                 mov.play()
             running = True
+        print 'change user'
 
 
     #finish movie if we ran all blocks    
@@ -369,6 +407,8 @@ while True:
     win.flip()
 
     if event.getKeys(keyList=['escape','q']):
+    	conn.close()
+    	s.close()
     	quit()
 
 
@@ -397,6 +437,7 @@ while thanks_clock.getTime() <= 30.0:
     if event.getKeys(keyList=['escape','q']):
         quit()
     fix_stim.setAutoDraw(True)
+
 
 #wrap up
 quit()
